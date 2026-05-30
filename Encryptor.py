@@ -5,9 +5,11 @@ app = marimo.App(width="columns")
 
 
 @app.cell
-def _(InvalidTag):
+def functions(InvalidTag):
     import os
     import sys
+    import getpass
+    import time
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -86,11 +88,17 @@ def _(InvalidTag):
         except InvalidTag:
             print("ERROR: Decryption failed! Incorrect password or corrupted file.\n")
 
-    return decrypt_file, encrypt_file, os, sys
+    def duration_calc(start_time, end_time):
+        duration = end_time - start_time
+        seconds = int(duration)
+        milliseconds = int((duration - seconds) * 1000)
+        return duration
+
+    return decrypt_file, duration_calc, encrypt_file, getpass, os, sys, time
 
 
 @app.cell
-def _(encrypt_file, os, sys):
+def encrypt(duration_calc, encrypt_file, getpass, os, sys, time):
     ###############################################
     # ENCRYPT FILES
     ###############################################
@@ -105,9 +113,11 @@ def _(encrypt_file, os, sys):
 
     os.makedirs(output_folder, exist_ok=True)
 
-    pwd = input("Enter master password to ENCRYPT: ")
+    pwd = getpass.getpass("Enter master password to ENCRYPT: ")
 
-    current_iteration_target = 1000000
+    current_iteration_target = 100000
+
+    _start_time = time.time()
 
     for filename in os.listdir(input_folder):
         input_file = os.path.join(input_folder, filename)
@@ -116,11 +126,17 @@ def _(encrypt_file, os, sys):
         if os.path.isfile(input_file) and not filename.endswith('.enc'):
             output_file = os.path.join(output_folder, f"{filename}.enc")
             encrypt_file(input_file, output_file, pwd, iterations=current_iteration_target)
+
+
+    _end_time = time.time()
+
+    #print(f"Encryption process completed in {seconds} seconds and {milliseconds} milliseconds.")
+    print(f"Encryption process completed in {duration_calc(_start_time, _end_time)} seconds.")
     return
 
 
 @app.cell
-def _(decrypt_file, os, sys):
+def decrypt(decrypt_file, duration_calc, getpass, os, sys, time):
     ###############################################
     # DECRYPT FILES
     ###############################################
@@ -135,7 +151,9 @@ def _(decrypt_file, os, sys):
 
     os.makedirs(_output_folder, exist_ok=True)
 
-    _pwd = input("Enter master password to DECRYPT: ")
+    _pwd = getpass.getpass("Enter master password to DECRYPT: ")
+
+    _start_time = time.time()
 
     for _filename in os.listdir(_input_folder):
         _input_file = os.path.join(_input_folder, _filename)
@@ -143,6 +161,10 @@ def _(decrypt_file, os, sys):
             _output_filename = _filename[:-4]  # Remove the .enc extension
             _output_file = os.path.join(_output_folder, _output_filename)
             decrypt_file(_input_file,_output_file, _pwd)
+
+    _end_time = time.time()
+
+    print(f"Decryption process completed in {duration_calc(_start_time, _end_time)} seconds.")
     return
 
 
